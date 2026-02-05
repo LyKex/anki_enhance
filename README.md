@@ -1,12 +1,12 @@
 # Anki Enhance
 
 Generate Anki flashcards from transcripts, textbooks, and other text content using LLMs.
+Inspired by the workflow of [@languagejones](https://youtu.be/QVpu66njzdE?si=WoQYjTXhRcQdocj0).
 
 Built with assistance from Claude (Anthropic).
 
 ## Features
 
-- **Multiple LLM Providers**: Claude, ChatGPT, and Gemini
 - **Three Card Types**:
   - **Vocabulary**: Word/phrase with definition, example, and pronunciation
   - **Cloze**: Fill-in-the-blank cards with `{{c1::deletions}}`
@@ -16,24 +16,40 @@ Built with assistance from Claude (Anthropic).
   - `.apkg` - Native Anki package (default)
   - `.csv` - Tab-separated for manual import
 - **Configurable**: Adjust for beginner/intermediate/advanced learners
+- **Multiple LLM Providers**: Claude, ChatGPT, or Gemini. API key required.
 
 ## Installation
 
-Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/).
+Recommend to use [uv](https://docs.astral.sh/uv/) for installation.
 
 ```bash
 # Clone the repository
 git clone https://github.com/LyKex/anki_enhance.git
 cd anki_enhance
 
-# Install dependencies
-uv sync
+# Install for user
+uv tool install .
+
+anki-enhance -h
 ```
 
 ## Configuration
 
-Set your API key as an environment variable:
+To initialize a sample config file:
+```
+anki-enhance config init
+```
+This will create the config file at `~/.config/anki_enhance/config.yaml`, which can be override by cli arguments.
 
+Two important configs to specify:
+1. LLM provider and corresponding API key.
+```yaml
+provider: claude  # Options: claude, openai, gemini
+model: claude-sonnet-4-20250514  # Optional: override default model
+claude_api_key: sk-ant-...
+```
+Alternatively, you can provide the API key as environment variables.
+For example in `Bash`:
 ```bash
 # For Claude (default)
 export ANTHROPIC_API_KEY="your-key-here"
@@ -44,12 +60,16 @@ export OPENAI_API_KEY="your-key-here"
 # For Gemini
 export GOOGLE_API_KEY="your-key-here"
 ```
-
-Optionally, create a config file at `~/.config/anki_enhance/config.yaml`:
-
+2. the lanague you are trying to learn and your current level
 ```bash
-# Generate example config
-uv run anki-enhance config init
+level: intermediate  # Options: beginner, intermediate, advanced
+source_lang: English  # Your native language (for definitions)
+target_lang: French  # Language you're learning
+```
+
+You can check the current configuration by:
+```bash
+anki-enhance config show
 ```
 
 ## Usage
@@ -58,14 +78,13 @@ uv run anki-enhance config init
 
 ```bash
 # Generate .apkg file from text (default output)
-uv run anki-enhance gen -i transcript.txt
+anki-enhance gen -i transcript.txt
 
 # Use a different provider
-uv run anki-enhance gen -i lesson.txt -p openai
-uv run anki-enhance gen -i lesson.txt -p gemini
+anki-enhance gen -i lesson.txt -p openai
 
 # Output as CSV instead
-uv run anki-enhance gen -i lesson.txt -o cards.csv
+anki-enhance gen -i lesson.txt -o cards.csv
 ```
 
 ### Full Options
@@ -83,7 +102,46 @@ uv run anki-enhance gen \
   --deck-name "Spanish Vocab"
 ```
 
-### Commands
+See detailed [commands documentation](#commands) in the end.
+
+
+## Importing into Anki
+
+### APKG Files (Recommended)
+
+1. Double-click the `.apkg` file, or
+2. Open Anki → **File → Import** → Select the `.apkg` file
+3. Cards are imported automatically with proper note types
+
+### CSV Files
+
+1. Open Anki and select your deck
+2. Go to **File → Import**
+3. Select your generated CSV file
+4. Set the field separator to **Tab**
+5. Map fields appropriately:
+   - Vocabulary/Sentence cards: Front, Back, Tags
+   - Cloze cards: Text, Tags (use Cloze note type)
+6. Click **Import**
+
+## Card Examples
+
+### Vocabulary Card
+| Front | Back |
+|-------|------|
+| ephemeral | [ɪˈfemərəl]<br>Lasting for a very short time<br>Example: The ephemeral beauty of cherry blossoms |
+
+### Cloze Card
+```
+The {{c1::cat}} sat on the {{c2::mat}}.
+```
+
+### Sentence Card
+| Front | Back |
+|-------|------|
+| El gato está en la mesa. | The cat is on the table.<br>Grammar: "estar" used for location |
+
+## Commands
 
 The CLI has two main commands:
 
@@ -106,81 +164,13 @@ anki-enhance
 | `--model` | | | LLM model (overrides provider default) |
 | `--level` | `-l` | `intermediate` | User level: `beginner`, `intermediate`, `advanced` |
 | `--source-lang` | | `English` | Your native language (for definitions) |
-| `--target-lang` | | `English` | Language you're learning |
+| `--target-lang` | | `French` | Language you're learning |
 | `--card-types` | `-t` | `vocabulary,cloze,sentence` | Card types to generate |
-| `--max-cards` | `-m` | `20` | Maximum cards per type |
+| `--max-cards` | `-m` | `10` | Maximum cards per type |
 | `--config` | `-c` | | Path to YAML config file |
 | `--deck-name` | | `Anki Enhance` | Deck name (for .apkg output) |
 | `--single-file` | | | Export all card types to one CSV file |
 
-### Config Commands
-
-```bash
-# Generate example config file
-uv run anki-enhance config init
-
-# Display current loaded configuration
-uv run anki-enhance config show
-
-# Show config file search paths
-uv run anki-enhance config path
-```
-
-## Importing into Anki
-
-### APKG Files (Recommended)
-
-1. Double-click the `.apkg` file, or
-2. Open Anki → **File → Import** → Select the `.apkg` file
-3. Cards are imported automatically with proper note types
-
-### CSV Files
-
-1. Open Anki and select your deck
-2. Go to **File → Import**
-3. Select your generated CSV file
-4. Set the field separator to **Tab**
-5. Map fields appropriately:
-   - Vocabulary/Sentence cards: Front, Back, Tags
-   - Cloze cards: Text, Tags (use Cloze note type)
-6. Click **Import**
-
-## Card Type Examples
-
-### Vocabulary Card
-| Front | Back |
-|-------|------|
-| ephemeral | [ɪˈfemərəl]<br>Lasting for a very short time<br>Example: The ephemeral beauty of cherry blossoms |
-
-### Cloze Card
-```
-The {{c1::cat}} sat on the {{c2::mat}}.
-```
-
-### Sentence Card
-| Front | Back |
-|-------|------|
-| El gato está en la mesa. | The cat is on the table.<br>Grammar: "estar" used for location |
-
-## Configuration File
-
-Create `~/.config/anki_enhance/config.yaml` for persistent settings:
-
-```yaml
-provider: claude
-level: intermediate
-source_lang: English
-target_lang: Spanish
-max_cards: 25
-card_types:
-  - vocabulary
-  - sentence
-```
-
-Or generate one with:
-```bash
-uv run anki-enhance config init
-```
 
 ## License
 

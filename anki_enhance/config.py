@@ -25,7 +25,7 @@ class Config:
     # Card generation settings
     level: str = "intermediate"
     source_lang: str = "English"
-    target_lang: str = "English"
+    target_lang: str = "French"
     max_cards: int = 10
     card_types: list[str] = field(default_factory=lambda: ["vocabulary", "cloze", "sentence"])
 
