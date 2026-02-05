@@ -17,6 +17,7 @@ class Config:
 
     # LLM Provider settings
     provider: str = "claude"
+    model: Optional[str] = None
     claude_api_key: Optional[str] = None
     openai_api_key: Optional[str] = None
     google_api_key: Optional[str] = None
@@ -87,6 +88,8 @@ class Config:
             config_dict["card_types"] = args.card_types.split(",")
         if hasattr(args, "output") and args.output:
             config_dict["output_path"] = args.output
+        if hasattr(args, "model") and args.model:
+            config_dict["model"] = args.model
 
         return cls(**config_dict)
 
@@ -103,10 +106,15 @@ class Config:
 
 EXAMPLE_CONFIG = """\
 # Anki Enhance Configuration
-# Copy this file to config.yaml or ~/.config/anki_enhance/config.yaml
+# Copy this file to ~/.config/anki_enhance/config.yaml or the working directory.
 
 # LLM Provider settings
 provider: claude  # Options: claude, openai, gemini
+# model: claude-sonnet-4-20250514  # Optional: override default model
+# Model examples by provider:
+#   Claude: claude-sonnet-4-20250514, claude-opus-4-20250514, claude-haiku-3-5
+#   OpenAI: gpt-4o, gpt-4o-mini, gpt-4-turbo
+#   Gemini: gemini-2.0-flash, gemini-1.5-pro
 
 # API keys (optional - can also use environment variables)
 # claude_api_key: sk-ant-...
@@ -116,7 +124,7 @@ provider: claude  # Options: claude, openai, gemini
 # Card generation settings
 level: intermediate  # Options: beginner, intermediate, advanced
 source_lang: English  # Your native language (for definitions)
-target_lang: English  # Language you're learning
+target_lang: French  # Language you're learning
 max_cards: 20  # Maximum cards per type
 card_types:
   - vocabulary
@@ -124,9 +132,9 @@ card_types:
   - sentence
 
 # Output settings
-output_path: cards.csv
-delimiter: "\\t"  # Tab-separated for Anki import
-include_tags: true
+output_path: cards.apkg
+delimiter: "\\t"  # for csv file
+include_tags: true # currently the card type is tagged
 """
 
 

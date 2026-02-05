@@ -22,6 +22,8 @@ def create_provider(config: Config):
         if not api_key:
             print("Error: ANTHROPIC_API_KEY not set. Set the environment variable or pass --api-key.")
             sys.exit(1)
+        if config.model:
+            return ClaudeProvider(api_key=api_key, model=config.model)
         return ClaudeProvider(api_key=api_key)
 
     elif provider_name == "openai":
@@ -29,6 +31,8 @@ def create_provider(config: Config):
         if not api_key:
             print("Error: OPENAI_API_KEY not set. Set the environment variable or pass --api-key.")
             sys.exit(1)
+        if config.model:
+            return OpenAIProvider(api_key=api_key, model=config.model)
         return OpenAIProvider(api_key=api_key)
 
     elif provider_name == "gemini":
@@ -36,6 +40,8 @@ def create_provider(config: Config):
         if not api_key:
             print("Error: GOOGLE_API_KEY not set. Set the environment variable or pass --api-key.")
             sys.exit(1)
+        if config.model:
+            return GeminiProvider(api_key=api_key, model=config.model)
         return GeminiProvider(api_key=api_key)
 
     else:
@@ -142,6 +148,10 @@ Environment Variables:
         default="Anki Enhance",
         help="Name of the Anki deck (.apkg only, default: Anki Enhance)"
     )
+    parser.add_argument(
+        "--model",
+        help="LLM model to use (overrides provider default)"
+    )
 
     args = parser.parse_args()
 
@@ -171,6 +181,8 @@ Environment Variables:
         config.max_cards = args.max_cards
     if args.output:
         config.output_path = args.output
+    if args.model:
+        config.model = args.model
 
     # Read input file
     print(f"Reading input file: {args.input}")
