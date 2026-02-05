@@ -17,17 +17,18 @@ CLI tool that generates Anki flashcards from text using LLMs (Claude, OpenAI, Ge
 ```
 anki_enhance/
 ├── main.py              # CLI entry point (argparse)
-├── config.py            # Configuration and settings
+├── config.py            # Configuration management
 ├── providers/
 │   ├── base.py          # Abstract LLMProvider interface
-│   ├── claude.py        # Anthropic Claude
-│   ├── openai.py        # OpenAI ChatGPT
-│   └── gemini.py        # Google Gemini (uses google-genai)
+│   ├── claude.py        # Anthropic Claude (claude-sonnet-4-20250514)
+│   ├── openai.py        # OpenAI ChatGPT (gpt-4o)
+│   └── gemini.py        # Google Gemini (gemini-2.0-flash)
 ├── generators/
 │   ├── prompts.py       # Prompt templates by card type/level
 │   └── card_generator.py # Core logic: provider + prompts → cards
 ├── exporters/
-│   └── csv_exporter.py  # Anki-compatible TSV output
+│   ├── csv_exporter.py  # Anki-compatible TSV output
+│   └── apkg_exporter.py # Native .apkg output (default)
 ├── models/
 │   └── card.py          # VocabularyCard, ClozeCard, SentenceCard
 └── utils/
@@ -48,6 +49,16 @@ anki_enhance/
 - `OPENAI_API_KEY` - ChatGPT
 - `GOOGLE_API_KEY` - Gemini
 
+## Configuration
+
+Config file locations (checked in order):
+1. `./config.yaml`
+2. `./config.yml`
+3. `~/.config/anki_enhance/config.yaml`
+4. `~/.config/anki_enhance/config.yml`
+
+Generate example config: `uv run anki-enhance --config init`
+
 ## Development Commands
 
 ```bash
@@ -58,13 +69,16 @@ uv run anki-enhance -i file.txt      # Generate cards
 
 ## Key Implementation Details
 
+- Default output is `.apkg` (Anki package), not CSV
 - LLM providers return JSON arrays; `card_generator.py` parses with regex fallback
 - Prompts request structured JSON output for reliable parsing
 - CSV exporter separates card types into different files unless `--single-file`
-- Google Gemini uses new `google-genai` package (not deprecated `google-generativeai`)
+- APKG exporter uses `genanki` with custom note models and CSS styling
+- Google Gemini uses `google-genai` package with `genai.Client` API
 
 ## Lessons Learned
 
 - `google-generativeai` is deprecated → use `google-genai` with `genai.Client` API
 - hatchling fails if `readme` specified in pyproject.toml but file doesn't exist
 - Cloze cards use Anki format: `{{c1::word}}`, `{{c2::another}}`
+- JSON parsing needs regex fallback because LLMs add explanatory text

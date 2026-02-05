@@ -2,6 +2,8 @@
 
 Generate Anki flashcards from transcripts, textbooks, and other text content using LLMs.
 
+Built with assistance from Claude (Anthropic).
+
 ## Features
 
 - **Multiple LLM Providers**: Claude, ChatGPT, and Gemini
@@ -10,8 +12,10 @@ Generate Anki flashcards from transcripts, textbooks, and other text content usi
   - **Cloze**: Fill-in-the-blank cards with `{{c1::deletions}}`
   - **Sentence**: Full sentences with translation and grammar notes
 - **Multiple Input Formats**: Plain text, SRT subtitles, Markdown, PDF
+- **Two Output Formats**:
+  - `.apkg` - Native Anki package (default)
+  - `.csv` - Tab-separated for manual import
 - **Configurable**: Adjust for beginner/intermediate/advanced learners
-- **Anki-Compatible Output**: Tab-separated CSV ready for import
 
 ## Installation
 
@@ -19,8 +23,8 @@ Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 # Clone the repository
-git clone https://github.com/LyKex/anki-enhance.git
-cd anki-enhance
+git clone https://github.com/LyKex/anki_enhance.git
+cd anki_enhance
 
 # Install dependencies
 uv sync
@@ -41,17 +45,27 @@ export OPENAI_API_KEY="your-key-here"
 export GOOGLE_API_KEY="your-key-here"
 ```
 
+Optionally, create a config file at `~/.config/anki_enhance/config.yaml`:
+
+```bash
+# Generate example config
+uv run anki-enhance --config init
+```
+
 ## Usage
 
 ### Basic Usage
 
 ```bash
-# Generate cards from a text file using Claude
+# Generate .apkg file from text (default output)
 uv run anki-enhance --input transcript.txt
 
 # Use a different provider
 uv run anki-enhance --input lesson.txt --provider openai
 uv run anki-enhance --input lesson.txt --provider gemini
+
+# Output as CSV instead
+uv run anki-enhance --input lesson.txt --output cards.csv
 ```
 
 ### Full Options
@@ -59,13 +73,14 @@ uv run anki-enhance --input lesson.txt --provider gemini
 ```bash
 uv run anki-enhance \
   --input content.txt \
-  --output cards.csv \
+  --output cards.apkg \
   --provider claude \
   --level intermediate \
   --source-lang English \
   --target-lang Spanish \
   --card-types vocabulary,cloze,sentence \
-  --max-cards 30
+  --max-cards 30 \
+  --deck-name "Spanish Vocab"
 ```
 
 ### Command Line Options
@@ -73,17 +88,26 @@ uv run anki-enhance \
 | Option | Short | Default | Description |
 |--------|-------|---------|-------------|
 | `--input` | `-i` | (required) | Input file path (txt, srt, md, pdf) |
-| `--output` | `-o` | `cards.csv` | Output CSV file path |
+| `--output` | `-o` | `cards.apkg` | Output file path (.apkg or .csv) |
 | `--provider` | `-p` | `claude` | LLM provider: `claude`, `openai`, `gemini` |
 | `--level` | `-l` | `intermediate` | User level: `beginner`, `intermediate`, `advanced` |
 | `--source-lang` | | `English` | Your native language (for definitions) |
 | `--target-lang` | | `English` | Language you're learning |
 | `--card-types` | `-t` | `vocabulary,cloze,sentence` | Card types to generate |
 | `--max-cards` | `-m` | `20` | Maximum cards per type |
-| `--config` | `-c` | | Path to YAML config file |
-| `--single-file` | | | Export all card types to one file |
+| `--config` | `-c` | | Path to YAML config file, or `init` to generate one |
+| `--deck-name` | | `Anki Enhance` | Deck name (for .apkg output) |
+| `--single-file` | | | Export all card types to one CSV file |
 
 ## Importing into Anki
+
+### APKG Files (Recommended)
+
+1. Double-click the `.apkg` file, or
+2. Open Anki → **File → Import** → Select the `.apkg` file
+3. Cards are imported automatically with proper note types
+
+### CSV Files
 
 1. Open Anki and select your deck
 2. Go to **File → Import**
@@ -113,7 +137,7 @@ The {{c1::cat}} sat on the {{c2::mat}}.
 
 ## Configuration File
 
-Create `config.yaml` for persistent settings:
+Create `~/.config/anki_enhance/config.yaml` for persistent settings:
 
 ```yaml
 provider: claude
@@ -126,11 +150,11 @@ card_types:
   - sentence
 ```
 
-Then run with:
+Or generate one with:
 ```bash
-uv run anki-enhance --input text.txt --config config.yaml
+uv run anki-enhance --config init
 ```
 
 ## License
 
-MIT
+GPL-3.0
