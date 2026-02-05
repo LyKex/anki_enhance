@@ -4,7 +4,12 @@
 import argparse
 import sys
 
-from .config import Config, load_config, generate_example_config
+from .config import (
+    Config,
+    load_config,
+    generate_example_config,
+    DEFAULT_CONFIG_DIR,
+)
 from .exporters import CSVExporter, ApkgExporter
 from .generators import CardGenerator
 from .generators.prompts import UserLevel
@@ -79,94 +84,75 @@ def parse_level(level_str: str) -> UserLevel:
     return level_map.get(level_str.lower(), UserLevel.INTERMEDIATE)
 
 
-def main():
-    """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description="Generate Anki flashcards from text using LLMs.",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  %(prog)s --config init                       # Generate example config file
-  %(prog)s -i transcript.txt                   # Generate .apkg (default)
-  %(prog)s -i content.txt -o cards.csv         # Export as CSV instead
-  %(prog)s -i lesson.srt -t vocabulary,sentence -m 30
+# =============================================================================
+# Command Handlers
+# =============================================================================
 
-Environment Variables:
-  ANTHROPIC_API_KEY  - API key for Claude
-  OPENAI_API_KEY     - API key for ChatGPT
-  GOOGLE_API_KEY     - API key for Gemini
-        """
-    )
 
-    parser.add_argument(
-        "--input", "-i",
-        help="Input file path (txt, srt, md, pdf)"
-    )
-    parser.add_argument(
-        "--output", "-o",
-        default="cards.apkg",
-        help="Output file path. Use .apkg for Anki package (recommended) or .csv for CSV (default: cards.apkg)"
-    )
-    parser.add_argument(
-        "--provider", "-p",
-        choices=["claude", "openai", "gemini"],
-        help="LLM provider to use (default: claude)"
-    )
-    parser.add_argument(
-        "--level", "-l",
-        choices=["beginner", "intermediate", "advanced"],
-        help="User proficiency level (default: intermediate)"
-    )
-    parser.add_argument(
-        "--source-lang",
-        help="Source/native language for definitions (default: English)"
-    )
-    parser.add_argument(
-        "--target-lang",
-        help="Target language being learned (default: English)"
-    )
-    parser.add_argument(
-        "--card-types", "-t",
-        help="Card types to generate, comma-separated (default: vocabulary,cloze,sentence)"
-    )
-    parser.add_argument(
-        "--max-cards", "-m",
-        type=int,
-        help="Maximum cards per type (default: 20)"
-    )
-    parser.add_argument(
-        "--config", "-c",
-        help="Path to configuration YAML file, or 'init' to generate example config"
-    )
-    parser.add_argument(
-        "--single-file",
-        action="store_true",
-        help="Export all card types to a single file (CSV only)"
-    )
-    parser.add_argument(
-        "--deck-name",
-        default="Anki Enhance",
-        help="Name of the Anki deck (.apkg only, default: Anki Enhance)"
-    )
-    parser.add_argument(
-        "--model",
-        help="LLM model to use (overrides provider default)"
-    )
+def cmd_config_init(args):
+    """Generate example config file."""
+    output_path = getattr(args, "output", None)
+    config_path, backup_path = generate_example_config(output_path)
+    if backup_path:
+        print(f"Backed up existing config to: {backup_path}")
+    print(f"Generated example configuration: {config_path}")
 
-    args = parser.parse_args()
 
-    # Handle --config init
-    if args.config == "init":
-        output = generate_example_config("config.yaml")
-        print(f"Generated example configuration: {output}")
-        sys.exit(0)
+def cmd_config_show(args):
+    """Display current configuration."""
+    config_path = getattr(args, "config", None)
+    config = load_config(config_path)
 
-    # Require input file for normal operation
+    print("Current Configuration:")
+
+    print("\nLLM Settings:")
+    print(f"  Provider:   {config.provider}")
+    print(f"  Model:      {config.model or '(provider default)'}")
+    print(f"  Claude key: {'set' if config.claude_api_key else 'not set'}")
+    print(f"  OpenAI key: {'set' if config.openai_api_key else 'not set'}")
+    print(f"  Gemini key: {'set' if config.google_api_key else 'not set'}")
+
+    print("\nCard Generation:")
+    print(f"  Level:       {config.level}")
+    print(f"  Source Lang: {config.source_lang}")
+    print(f"  Target Lang: {config.target_lang}")
+    print(f"  Max Cards:   {config.max_cards}")
+    print(f"  Card Types:  {', '.join(config.card_types)}")
+    print(f"  Include Tags: {config.include_tags}")
+
+    print("\nOutput:")
+    print(f"  Path:         {config.output_path}")
+
+
+def cmd_config_path(_args):
+    """Show config file search paths."""
+    from pathlib import Path
+
+    print("Config file search paths (in order):")
+    print("-" * 40)
+
+    search_paths = [
+        Path("config.yaml"),
+        Path("config.yml"),
+        DEFAULT_CONFIG_DIR / "config.yaml",
+        DEFAULT_CONFIG_DIR / "config.yml",
+    ]
+
+    for i, path in enumerate(search_paths, 1):
+        exists = path.exists()
+        status = "(found)" if exists else ""
+        print(f"  {i}. {path} {status}")
+
+
+def cmd_gen(args):
+    """Generate Anki cards from input file."""
+    # Require input file
     if not args.input:
-        parser.error("--input is required (unless using --config init)")
+        print("Error: --input is required")
+        sys.exit(1)
 
     # Load configuration
-    config = load_config(args.config)
+    config = load_config(getattr(args, "config", None))
 
     # Override with CLI arguments only if explicitly provided
     if args.provider:
@@ -235,6 +221,186 @@ Environment Variables:
             csv_exporter.export(cards, output_path)
 
     print("Done!")
+
+
+# =============================================================================
+# Subparser Builders
+# =============================================================================
+
+
+def _add_config_parser(subparsers):
+    """Add config subcommand with nested subcommands."""
+    config_parser = subparsers.add_parser(
+        "config",
+        help="Configuration management",
+        description="Manage anki-enhance configuration files.",
+    )
+
+    config_subparsers = config_parser.add_subparsers(
+        title="config commands",
+        dest="config_command",
+        metavar="<command>",
+    )
+
+    # config init
+    init_parser = config_subparsers.add_parser(
+        "init",
+        help="Generate example config file",
+        description="Generate an example configuration YAML file.",
+    )
+    init_parser.add_argument(
+        "--output", "-o",
+        help="Output path for config file (default: config.yaml in current dir)",
+    )
+    init_parser.set_defaults(func=cmd_config_init)
+
+    # config show
+    show_parser = config_subparsers.add_parser(
+        "show",
+        help="Display current configuration",
+        description="Display the currently loaded configuration values.",
+    )
+    show_parser.add_argument(
+        "--config", "-c",
+        help="Path to configuration YAML file",
+    )
+    show_parser.set_defaults(func=cmd_config_show)
+
+    # config path
+    path_parser = config_subparsers.add_parser(
+        "path",
+        help="Show config file search paths",
+        description="Show the paths searched for configuration files.",
+    )
+    path_parser.set_defaults(func=cmd_config_path)
+
+    # Set default to show help when 'config' is run without subcommand
+    config_parser.set_defaults(func=lambda _args: config_parser.print_help())
+
+
+def _add_gen_parser(subparsers):
+    """Add gen subcommand with all generation options."""
+    gen_parser = subparsers.add_parser(
+        "gen",
+        help="Generate Anki flashcards",
+        description="Generate Anki flashcards from text using LLMs.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s -i transcript.txt                   # Generate .apkg (default)
+  %(prog)s -i content.txt -o cards.csv         # Export as CSV instead
+  %(prog)s -i lesson.srt -t vocabulary,sentence -m 30
+
+Environment Variables:
+  ANTHROPIC_API_KEY  - API key for Claude
+  OPENAI_API_KEY     - API key for ChatGPT
+  GOOGLE_API_KEY     - API key for Gemini
+        """
+    )
+
+    gen_parser.add_argument(
+        "--input", "-i",
+        required=True,
+        help="Input file path (txt, srt, md, pdf)",
+    )
+    gen_parser.add_argument(
+        "--output", "-o",
+        default="cards.apkg",
+        help="Output file path. Use .apkg for Anki package (recommended) or .csv for CSV (default: cards.apkg)",
+    )
+    gen_parser.add_argument(
+        "--provider", "-p",
+        choices=["claude", "openai", "gemini"],
+        help="LLM provider to use (default: claude)",
+    )
+    gen_parser.add_argument(
+        "--model",
+        help="LLM model to use (overrides provider default)",
+    )
+    gen_parser.add_argument(
+        "--level", "-l",
+        choices=["beginner", "intermediate", "advanced"],
+        help="User proficiency level (default: intermediate)",
+    )
+    gen_parser.add_argument(
+        "--source-lang",
+        help="Source/native language for definitions (default: English)",
+    )
+    gen_parser.add_argument(
+        "--target-lang",
+        help="Target language being learned (default: English)",
+    )
+    gen_parser.add_argument(
+        "--card-types", "-t",
+        help="Card types to generate, comma-separated (default: vocabulary,cloze,sentence)",
+    )
+    gen_parser.add_argument(
+        "--max-cards", "-m",
+        type=int,
+        help="Maximum cards per type (default: 20)",
+    )
+    gen_parser.add_argument(
+        "--config", "-c",
+        help="Path to configuration YAML file",
+    )
+    gen_parser.add_argument(
+        "--single-file",
+        action="store_true",
+        help="Export all card types to a single file (CSV only)",
+    )
+    gen_parser.add_argument(
+        "--deck-name",
+        default="Anki Enhance",
+        help="Name of the Anki deck (.apkg only, default: Anki Enhance)",
+    )
+
+    gen_parser.set_defaults(func=cmd_gen)
+
+
+# =============================================================================
+# Main Entry Point
+# =============================================================================
+
+
+def main():
+    """Main entry point."""
+    parser = argparse.ArgumentParser(
+        prog="anki-enhance",
+        description="Generate Anki flashcards from text using LLMs.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Commands:
+  config    Configuration management (init, show, path)
+  gen       Generate Anki flashcards from text
+
+Examples:
+  anki-enhance config init              # Generate example config file
+  anki-enhance config show              # Display current configuration
+  anki-enhance gen -i transcript.txt    # Generate .apkg from text
+
+Environment Variables:
+  ANTHROPIC_API_KEY  - API key for Claude
+  OPENAI_API_KEY     - API key for ChatGPT
+  GOOGLE_API_KEY     - API key for Gemini
+        """
+    )
+
+    subparsers = parser.add_subparsers(
+        title="commands",
+        dest="command",
+        metavar="<command>",
+    )
+
+    _add_config_parser(subparsers)
+    _add_gen_parser(subparsers)
+
+    args = parser.parse_args()
+
+    if args.command is None:
+        parser.print_help()
+        sys.exit(0)
+
+    args.func(args)
 
 
 if __name__ == "__main__":

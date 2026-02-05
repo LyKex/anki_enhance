@@ -49,7 +49,7 @@ Optionally, create a config file at `~/.config/anki_enhance/config.yaml`:
 
 ```bash
 # Generate example config
-uv run anki-enhance --config init
+uv run anki-enhance config init
 ```
 
 ## Usage
@@ -58,46 +58,73 @@ uv run anki-enhance --config init
 
 ```bash
 # Generate .apkg file from text (default output)
-uv run anki-enhance --input transcript.txt
+uv run anki-enhance gen -i transcript.txt
 
 # Use a different provider
-uv run anki-enhance --input lesson.txt --provider openai
-uv run anki-enhance --input lesson.txt --provider gemini
+uv run anki-enhance gen -i lesson.txt -p openai
+uv run anki-enhance gen -i lesson.txt -p gemini
 
 # Output as CSV instead
-uv run anki-enhance --input lesson.txt --output cards.csv
+uv run anki-enhance gen -i lesson.txt -o cards.csv
 ```
 
 ### Full Options
 
 ```bash
-uv run anki-enhance \
-  --input content.txt \
-  --output cards.apkg \
-  --provider claude \
-  --level intermediate \
+uv run anki-enhance gen \
+  -i content.txt \
+  -o cards.apkg \
+  -p claude \
+  -l intermediate \
   --source-lang English \
   --target-lang Spanish \
-  --card-types vocabulary,cloze,sentence \
-  --max-cards 30 \
+  -t vocabulary,cloze,sentence \
+  -m 30 \
   --deck-name "Spanish Vocab"
 ```
 
-### Command Line Options
+### Commands
+
+The CLI has two main commands:
+
+```
+anki-enhance
+├── config              # Configuration management
+│   ├── init            # Generate example config file
+│   ├── show            # Display current configuration
+│   └── path            # Show config file search paths
+└── gen                 # Card generation
+```
+
+### Generation Options (`gen`)
 
 | Option | Short | Default | Description |
 |--------|-------|---------|-------------|
 | `--input` | `-i` | (required) | Input file path (txt, srt, md, pdf) |
 | `--output` | `-o` | `cards.apkg` | Output file path (.apkg or .csv) |
 | `--provider` | `-p` | `claude` | LLM provider: `claude`, `openai`, `gemini` |
+| `--model` | | | LLM model (overrides provider default) |
 | `--level` | `-l` | `intermediate` | User level: `beginner`, `intermediate`, `advanced` |
 | `--source-lang` | | `English` | Your native language (for definitions) |
 | `--target-lang` | | `English` | Language you're learning |
 | `--card-types` | `-t` | `vocabulary,cloze,sentence` | Card types to generate |
 | `--max-cards` | `-m` | `20` | Maximum cards per type |
-| `--config` | `-c` | | Path to YAML config file, or `init` to generate one |
+| `--config` | `-c` | | Path to YAML config file |
 | `--deck-name` | | `Anki Enhance` | Deck name (for .apkg output) |
 | `--single-file` | | | Export all card types to one CSV file |
+
+### Config Commands
+
+```bash
+# Generate example config file
+uv run anki-enhance config init
+
+# Display current loaded configuration
+uv run anki-enhance config show
+
+# Show config file search paths
+uv run anki-enhance config path
+```
 
 ## Importing into Anki
 
@@ -152,7 +179,7 @@ card_types:
 
 Or generate one with:
 ```bash
-uv run anki-enhance --config init
+uv run anki-enhance config init
 ```
 
 ## License

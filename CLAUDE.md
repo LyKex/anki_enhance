@@ -49,6 +49,19 @@ anki_enhance/
 - `OPENAI_API_KEY` - ChatGPT
 - `GOOGLE_API_KEY` - Gemini
 
+## CLI Structure
+
+The CLI uses two subcommands:
+
+```
+anki-enhance
+├── config              # Configuration management
+│   ├── init            # Generate example config file
+│   ├── show            # Display current configuration
+│   └── path            # Show config file search paths
+└── gen                 # Card generation (main functionality)
+```
+
 ## Configuration
 
 Config file locations (checked in order):
@@ -57,14 +70,15 @@ Config file locations (checked in order):
 3. `~/.config/anki_enhance/config.yaml`
 4. `~/.config/anki_enhance/config.yml`
 
-Generate example config: `uv run anki-enhance --config init`
-
 ## Development Commands
 
 ```bash
-uv sync                              # Install dependencies
-uv run anki-enhance --help           # Show CLI help
-uv run anki-enhance -i file.txt      # Generate cards
+uv sync                                # Install dependencies
+uv run anki-enhance --help             # Show CLI help
+uv run anki-enhance config init        # Generate example config
+uv run anki-enhance config show        # Display current config
+uv run anki-enhance config path        # Show config search paths
+uv run anki-enhance gen -i file.txt    # Generate cards
 ```
 
 ## Key Implementation Details

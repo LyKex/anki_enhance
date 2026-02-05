@@ -26,7 +26,7 @@ class Config:
     level: str = "intermediate"
     source_lang: str = "English"
     target_lang: str = "English"
-    max_cards: int = 20
+    max_cards: int = 10
     card_types: list[str] = field(default_factory=lambda: ["vocabulary", "cloze", "sentence"])
 
     # Output settings
@@ -125,7 +125,7 @@ provider: claude  # Options: claude, openai, gemini
 level: intermediate  # Options: beginner, intermediate, advanced
 source_lang: English  # Your native language (for definitions)
 target_lang: French  # Language you're learning
-max_cards: 20  # Maximum cards per type
+max_cards: 10  # Maximum cards per type
 card_types:
   - vocabulary
   - cloze
@@ -138,21 +138,29 @@ include_tags: true # currently the card type is tagged
 """
 
 
-def generate_example_config(output_path: Optional[str] = None) -> str:
+def generate_example_config(output_path: Optional[str] = None) -> tuple[str, Optional[str]]:
     """Generate an example configuration file.
 
     Args:
         output_path: Path to write the config file. If None, writes to default config dir.
 
     Returns:
-        The path where the config was written.
+        Tuple of (config_path, backup_path). backup_path is None if no backup was needed.
     """
     if output_path:
         path = Path(output_path)
     else:
         path = get_config_dir(create=True) / "config.yaml"
+
+    # Back up existing config if it exists
+    backup_path = None
+    if path.exists():
+        backup = path.with_suffix(".yaml.bak")
+        backup.write_text(path.read_text())
+        backup_path = str(backup)
+
     path.write_text(EXAMPLE_CONFIG)
-    return str(path)
+    return str(path), backup_path
 
 
 def get_config_dir(create: bool = False) -> Path:
