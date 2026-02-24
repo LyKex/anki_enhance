@@ -7,7 +7,7 @@ name = "anki-enhance"
 version = "0.1.0"
 description = "Generate Anki flashcards from text using LLMs"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = {text = "GPL-3.0-only"}
 authors = [
     {name = "Your Name", email = "your@email.com"}
 ]
@@ -15,7 +15,7 @@ keywords = ["anki", "flashcards", "llm", "language-learning", "spaced-repetition
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Education",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
