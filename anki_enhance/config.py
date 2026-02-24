@@ -30,7 +30,7 @@ class Config:
     card_types: list[str] = field(default_factory=lambda: ["vocabulary", "cloze", "sentence"])
 
     # Output settings
-    output_path: str = "cards.csv"
+    output_path: str = "cards.apkg"
     delimiter: str = "\t"
     include_tags: bool = True
 

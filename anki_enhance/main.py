@@ -25,7 +25,7 @@ def create_provider(config: Config):
     if provider_name == "claude":
         api_key = config.get_api_key("claude")
         if not api_key:
-            print("Error: ANTHROPIC_API_KEY not set. Set the environment variable or pass --api-key.")
+            print("Error: ANTHROPIC_API_KEY not set. Set the environment variable or configure claude_api_key in config.yaml.")
             sys.exit(1)
         if config.model:
             return ClaudeProvider(api_key=api_key, model=config.model)
@@ -34,7 +34,7 @@ def create_provider(config: Config):
     elif provider_name == "openai":
         api_key = config.get_api_key("openai")
         if not api_key:
-            print("Error: OPENAI_API_KEY not set. Set the environment variable or pass --api-key.")
+            print("Error: OPENAI_API_KEY not set. Set the environment variable or configure openai_api_key in config.yaml.")
             sys.exit(1)
         if config.model:
             return OpenAIProvider(api_key=api_key, model=config.model)
@@ -43,7 +43,7 @@ def create_provider(config: Config):
     elif provider_name == "gemini":
         api_key = config.get_api_key("gemini")
         if not api_key:
-            print("Error: GOOGLE_API_KEY not set. Set the environment variable or pass --api-key.")
+            print("Error: GOOGLE_API_KEY not set. Set the environment variable or configure google_api_key in config.yaml.")
             sys.exit(1)
         if config.model:
             return GeminiProvider(api_key=api_key, model=config.model)
@@ -214,7 +214,7 @@ def cmd_gen(args):
         exporter = ApkgExporter(deck_name=args.deck_name)
         exporter.export(cards, output_path)
     else:
-        csv_exporter = CSVExporter(include_tags=config.include_tags)
+        csv_exporter = CSVExporter(delimiter=config.delimiter, include_tags=config.include_tags)
         if args.single_file:
             csv_exporter.export_all_to_single_file(cards, output_path)
         else:
