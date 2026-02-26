@@ -3,39 +3,38 @@
 Generate Anki flashcards from transcripts, textbooks, and other text content using LLMs.
 Inspired by the workflow of [@languagejones](https://youtu.be/QVpu66njzdE?si=WoQYjTXhRcQdocj0).
 
-Built with assistance from Claude (Anthropic).
-
 ## Features
 
 - **Three Card Types**:
   - **Vocabulary**: Word/phrase with definition, example, and pronunciation
-  - **Cloze**: Fill-in-the-blank cards with `{{c1::deletions}}`
+  - **Cloze**: Fill-in-the-blank cards with hints.
   - **Sentence**: Full sentences with translation and grammar notes
 - **Multiple Input Formats**: Plain text, SRT subtitles, Markdown, PDF
 - **Two Output Formats**:
   - `.apkg` - Native Anki package (default)
   - `.csv` - Tab-separated for manual import
 - **Configurable**: Adjust for beginner/intermediate/advanced learners
-- **Multiple LLM Providers**: Claude, ChatGPT, or Gemini. API key required.
+- **Multiple LLM Providers**: Claude, ChatGPT, Gemini or Openrouter. API key required.
 
 ## Installation
 
 Recommend to use [uv](https://docs.astral.sh/uv/) for installation.
 
 ```bash
-# Clone the repository
+# Clone this repository
 git clone https://github.com/LyKex/anki_enhance.git
 cd anki_enhance
 
 # Install for user
 uv tool install .
 
+# Use in terminal
 anki-enhance -h
 ```
 
 ## Configuration
 
-To initialize a sample config file:
+To bootstrap a sample config file:
 ```
 anki-enhance config init
 ```
@@ -81,10 +80,10 @@ anki-enhance config show
 anki-enhance gen -i transcript.txt
 
 # Use a different provider
-anki-enhance gen -i lesson.txt -p openai
+anki-enhance gen -i transcript.txt -p openai
 
 # Output as CSV instead
-anki-enhance gen -i lesson.txt -o cards.csv
+anki-enhance gen -i transcript.txt -o cards.csv
 ```
 
 ### Full Options
@@ -109,9 +108,9 @@ See detailed [commands documentation](#commands) in the end.
 
 ### APKG Files (Recommended)
 
-1. Double-click the `.apkg` file, or
+1. Just double-click the `.apkg` file, or 
 2. Open Anki → **File → Import** → Select the `.apkg` file
-3. Cards are imported automatically with proper note types
+Cards are imported automatically under deck 'Anki Enhance'.
 
 ### CSV Files
 
@@ -133,7 +132,7 @@ See detailed [commands documentation](#commands) in the end.
 
 ### Cloze Card
 ```
-The {{c1::cat}} sat on the {{c2::mat}}.
+The {{c1::cat::chat}} sat on the mat.
 ```
 
 ### Sentence Card
