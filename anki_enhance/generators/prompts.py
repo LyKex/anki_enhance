@@ -44,11 +44,12 @@ Only output the JSON array, no other text."""
 CLOZE_PROMPT_TEMPLATE = """Create cloze deletion cards from the following text for a {level} {target_lang} learner.
 
 Cloze format:
-- Use {{{{c1::answer::hint}}}} for the first deletion, {{{{c2::answer::hint}}}} for the second, etc.
+- Use {{{{c1::answer::hint}}}} for the deletion. Only delete one word from the sentence.
 - "answer" MUST be in {target_lang} (the word/phrase being tested).
 - "hint" MUST be a short prompt in {source_lang} that helps the learner recall the missing {target_lang} word/phrase.
+- avoid creating multiple clozes from the same sentence.
 
-Focus on key vocabulary, grammar patterns, and important phrases.
+Focus on key vocabulary, grammar patterns, and important phrases. Do not cloze for proper nouns.
 
 Text to analyze:
 ---

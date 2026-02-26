@@ -2,7 +2,7 @@
 
 Uses LiteLLM's OpenRouter integration.
 Model names should be in OpenRouter format and will be normalized to include the
-"openrouter/" prefix (e.g. "openrouter/anthropic/claude-3.5-sonnet").
+"openrouter/" prefix (e.g. "openrouter/openai/gpt-5.2").
 """
 
 from __future__ import annotations
@@ -21,10 +21,10 @@ class OpenRouterProvider(LLMProvider):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = "openrouter/anthropic/claude-3.5-sonnet",
+        model: str = "openrouter/openai/gpt-5.2",
         api_base: str = "https://openrouter.ai/api/v1",
-        site_url: Optional[str] = None,
-        app_name: Optional[str] = None,
+        site_url: Optional[str] = "https://github.com/LyKex/anki_enhance",
+        app_name: Optional[str] = "anki-enhance",
     ):
         """Initialize the OpenRouter provider.
 
@@ -53,7 +53,7 @@ class OpenRouterProvider(LLMProvider):
     def _normalize_model(model: str) -> str:
         model = (model or "").strip()
         if not model:
-            return "openrouter/anthropic/claude-3.5-sonnet"
+            return "openrouter/openai/gpt-5.2"
         if model.startswith("openrouter/"):
             return model
         return f"openrouter/{model}"

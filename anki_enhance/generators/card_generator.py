@@ -17,7 +17,7 @@ class CardGenerator:
         provider: LLMProvider,
         level: UserLevel = UserLevel.INTERMEDIATE,
         source_lang: str = "English",
-        target_lang: str = "English",
+        target_lang: str = "French",
         max_cards: int = 20,
     ):
         """Initialize the card generator.
@@ -82,6 +82,7 @@ class CardGenerator:
                 example=item.get("example", ""),
                 pronunciation=item.get("pronunciation", ""),
             )
+            # sanity check
             if card.word and card.definition:
                 cards.append(card)
 
@@ -98,6 +99,7 @@ class CardGenerator:
         cards = []
         for item in data:
             card = ClozeCard(text=item.get("text", ""))
+            # sanity check
             if card.text and "{{c1::" in card.text:
                 cards.append(card)
 
@@ -118,6 +120,7 @@ class CardGenerator:
                 translation=item.get("translation", ""),
                 grammar_notes=item.get("grammar_notes", ""),
             )
+            # sanity check
             if card.sentence and card.translation:
                 cards.append(card)
 
