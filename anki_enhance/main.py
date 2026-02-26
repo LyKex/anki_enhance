@@ -14,7 +14,7 @@ from .exporters import CSVExporter, ApkgExporter
 from .generators import CardGenerator
 from .generators.prompts import UserLevel
 from .models.card import CardType
-from .providers import ClaudeProvider, OpenAIProvider, GeminiProvider
+from .providers import ClaudeProvider, OpenAIProvider, GeminiProvider, OpenRouterProvider
 from .utils import FileReader
 
 
@@ -49,8 +49,17 @@ def create_provider(config: Config):
             return GeminiProvider(api_key=api_key, model=config.model)
         return GeminiProvider(api_key=api_key)
 
+    elif provider_name == "openrouter":
+        api_key = config.get_api_key("openrouter")
+        if not api_key:
+            print("Error: OPENROUTER_API_KEY not set. Set the environment variable or configure openrouter_api_key in config.yaml.")
+            sys.exit(1)
+        if config.model:
+            return OpenRouterProvider(api_key=api_key, model=config.model)
+        return OpenRouterProvider(api_key=api_key)
+
     else:
-        print(f"Error: Unknown provider '{provider_name}'. Choose from: claude, openai, gemini")
+        print(f"Error: Unknown provider '{provider_name}'. Choose from: claude, openai, gemini, openrouter")
         sys.exit(1)
 
 
@@ -111,6 +120,7 @@ def cmd_config_show(args):
     print(f"  Claude key: {'set' if config.claude_api_key else 'not set'}")
     print(f"  OpenAI key: {'set' if config.openai_api_key else 'not set'}")
     print(f"  Gemini key: {'set' if config.google_api_key else 'not set'}")
+    print(f"  OpenRouter key: {'set' if config.openrouter_api_key else 'not set'}")
 
     print("\nCard Generation:")
     print(f"  Level:       {config.level}")
@@ -292,9 +302,10 @@ Examples:
   %(prog)s -i lesson.srt -t vocabulary,sentence -m 30
 
 Environment Variables:
-  ANTHROPIC_API_KEY  - API key for Claude
-  OPENAI_API_KEY     - API key for ChatGPT
-  GOOGLE_API_KEY     - API key for Gemini
+  ANTHROPIC_API_KEY   - API key for Claude
+  OPENAI_API_KEY      - API key for ChatGPT
+  GOOGLE_API_KEY      - API key for Gemini
+  OPENROUTER_API_KEY  - API key for OpenRouter
         """
     )
 
@@ -310,7 +321,7 @@ Environment Variables:
     )
     gen_parser.add_argument(
         "--provider", "-p",
-        choices=["claude", "openai", "gemini"],
+        choices=["claude", "openai", "gemini", "openrouter"],
         help="LLM provider to use (default: claude)",
     )
     gen_parser.add_argument(
@@ -379,9 +390,10 @@ Examples:
   anki-enhance gen -i transcript.txt    # Generate .apkg from text
 
 Environment Variables:
-  ANTHROPIC_API_KEY  - API key for Claude
-  OPENAI_API_KEY     - API key for ChatGPT
-  GOOGLE_API_KEY     - API key for Gemini
+  ANTHROPIC_API_KEY   - API key for Claude
+  OPENAI_API_KEY      - API key for ChatGPT
+  GOOGLE_API_KEY      - API key for Gemini
+  OPENROUTER_API_KEY  - API key for OpenRouter
         """
     )
 
