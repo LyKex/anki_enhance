@@ -43,8 +43,13 @@ Only output the JSON array, no other text."""
 
 CLOZE_PROMPT_TEMPLATE = """Create cloze deletion cards from the following text for a {level} {target_lang} learner.
 
-Cloze format: Use {{{{c1::word}}}} for the first deletion, {{{{c2::word}}}} for the second, etc.
-Focus on key vocabulary, grammar patterns, and important phrases.
+Cloze format:
+- Use {{{{c1::answer::hint}}}} for the deletion. Only delete one word from the sentence.
+- "answer" MUST be in {target_lang} (the word/phrase being tested).
+- "hint" MUST be a short prompt in {source_lang} that helps the learner recall the missing {target_lang} word/phrase.
+- avoid creating multiple clozes from the same sentence.
+
+Focus on key vocabulary, grammar patterns, and important phrases. Do not cloze for proper nouns.
 
 Text to analyze:
 ---
@@ -54,7 +59,7 @@ Text to analyze:
 Generate up to {max_cards} cloze cards. Respond with a JSON array of objects:
 [
   {{
-    "text": "The {{{{c1::cat}}}} sat on the {{{{c2::mat}}}}."
+    "text": "The {{{{c1::cat::gato}}}} sat on the {{{{c2::mat::tapete}}}}."
   }}
 ]
 
@@ -122,6 +127,7 @@ class PromptBuilder:
         """Build a prompt for cloze card generation."""
         return CLOZE_PROMPT_TEMPLATE.format(
             level=self.level.value,
+            source_lang=self.source_lang,
             target_lang=self.target_lang,
             max_cards=self.max_cards,
             text=text,

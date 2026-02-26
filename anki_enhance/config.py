@@ -21,6 +21,7 @@ class Config:
     claude_api_key: Optional[str] = None
     openai_api_key: Optional[str] = None
     google_api_key: Optional[str] = None
+    openrouter_api_key: Optional[str] = None
 
     # Card generation settings
     level: str = "intermediate"
@@ -30,7 +31,7 @@ class Config:
     card_types: list[str] = field(default_factory=lambda: ["vocabulary", "cloze", "sentence"])
 
     # Output settings
-    output_path: str = "cards.csv"
+    output_path: str = "cards.apkg"
     delimiter: str = "\t"
     include_tags: bool = True
 
@@ -42,6 +43,8 @@ class Config:
             self.openai_api_key = os.environ.get("OPENAI_API_KEY")
         if not self.google_api_key:
             self.google_api_key = os.environ.get("GOOGLE_API_KEY")
+        if not self.openrouter_api_key:
+            self.openrouter_api_key = os.environ.get("OPENROUTER_API_KEY")
 
     @classmethod
     def from_yaml(cls, path: str | Path) -> "Config":
@@ -101,6 +104,8 @@ class Config:
             return self.openai_api_key
         elif provider == "gemini":
             return self.google_api_key
+        elif provider == "openrouter":
+            return self.openrouter_api_key
         return None
 
 
@@ -109,17 +114,19 @@ EXAMPLE_CONFIG = """\
 # Copy this file to ~/.config/anki_enhance/config.yaml or the working directory.
 
 # LLM Provider settings
-provider: claude  # Options: claude, openai, gemini
+provider: claude  # Options: claude, openai, gemini, openrouter
 # model: claude-sonnet-4-20250514  # Optional: override default model
 # Model examples by provider:
 #   Claude: claude-sonnet-4-20250514, claude-opus-4-20250514, claude-haiku-3-5
 #   OpenAI: gpt-4o, gpt-4o-mini, gpt-4-turbo
 #   Gemini: gemini-2.0-flash, gemini-1.5-pro
+#   OpenRouter: anthropic/claude-3.5-sonnet, openai/gpt-4o-mini, ... (will be normalized to openrouter/<model>)
 
 # API keys (optional - can also use environment variables)
 # claude_api_key: sk-ant-...
 # openai_api_key: sk-...
 # google_api_key: AI...
+# openrouter_api_key: sk-or-...
 
 # Card generation settings
 level: intermediate  # Options: beginner, intermediate, advanced
