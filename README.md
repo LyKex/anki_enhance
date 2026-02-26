@@ -9,7 +9,7 @@ Inspired by the workflow of [@languagejones](https://youtu.be/QVpu66njzdE?si=WoQ
   - **Vocabulary**: Word/phrase with definition, example, and pronunciation
   - **Cloze**: Fill-in-the-blank cards with hints.
   - **Sentence**: Full sentences with translation and grammar notes
-- **Multiple Input Formats**: Plain text, SRT subtitles, Markdown, PDF
+- **Multiple Input Formats**: Plain text, SRT subtitles, Markdown, PDF, Youtube urls
 - **Two Output Formats**:
   - `.apkg` - Native Anki package (default)
   - `.csv` - Tab-separated for manual import
@@ -78,6 +78,10 @@ anki-enhance config show
 ```bash
 # Generate .apkg file from text (default output)
 anki-enhance gen -i transcript.txt
+
+# Generate from a YouTube video transcript
+anki-enhance gen --youtube "https://www.youtube.com/watch?v=dQw4w9WgXcQ" \
+  --yt-lang en,en-US
 
 # Use a different provider
 anki-enhance gen -i transcript.txt -p openai
@@ -157,7 +161,9 @@ anki-enhance
 
 | Option | Short | Default | Description |
 |--------|-------|---------|-------------|
-| `--input` | `-i` | (required) | Input file path (txt, srt, md, pdf) |
+| `--input` | `-i` |  | Input file path (txt, srt, md, pdf) |
+| `--youtube` |  |  | YouTube video URL (or 11-char video id) to fetch transcript |
+| `--yt-lang` |  | `en` | Preferred transcript languages, comma-separated (e.g. `en,en-US`) |
 | `--output` | `-o` | `cards.apkg` | Output file path (.apkg or .csv) |
 | `--provider` | `-p` | `claude` | LLM provider: `claude`, `openai`, `gemini` |
 | `--model` | | | LLM model (overrides provider default) |

@@ -5,17 +5,17 @@ import argparse
 import sys
 
 from .config import (
-    Config,
-    load_config,
-    generate_example_config,
     DEFAULT_CONFIG_DIR,
+    Config,
+    generate_example_config,
+    load_config,
 )
-from .exporters import CSVExporter, ApkgExporter
+from .exporters import ApkgExporter, CSVExporter
 from .generators import CardGenerator
 from .generators.prompts import UserLevel
 from .models.card import CardType
-from .providers import ClaudeProvider, OpenAIProvider, GeminiProvider, OpenRouterProvider
-from .utils import FileReader
+from .providers import ClaudeProvider, GeminiProvider, OpenAIProvider, OpenRouterProvider
+from .utils import FileReader, fetch_youtube_transcript_precise
 
 
 def create_provider(config: Config):
@@ -25,7 +25,9 @@ def create_provider(config: Config):
     if provider_name == "claude":
         api_key = config.get_api_key("claude")
         if not api_key:
-            print("Error: ANTHROPIC_API_KEY not set. Set the environment variable or configure claude_api_key in config.yaml.")
+            print(
+                "Error: ANTHROPIC_API_KEY not set. Set the environment variable or configure claude_api_key in config.yaml."
+            )
             sys.exit(1)
         if config.model:
             return ClaudeProvider(api_key=api_key, model=config.model)
@@ -34,7 +36,9 @@ def create_provider(config: Config):
     elif provider_name == "openai":
         api_key = config.get_api_key("openai")
         if not api_key:
-            print("Error: OPENAI_API_KEY not set. Set the environment variable or configure openai_api_key in config.yaml.")
+            print(
+                "Error: OPENAI_API_KEY not set. Set the environment variable or configure openai_api_key in config.yaml."
+            )
             sys.exit(1)
         if config.model:
             return OpenAIProvider(api_key=api_key, model=config.model)
@@ -43,7 +47,9 @@ def create_provider(config: Config):
     elif provider_name == "gemini":
         api_key = config.get_api_key("gemini")
         if not api_key:
-            print("Error: GOOGLE_API_KEY not set. Set the environment variable or configure google_api_key in config.yaml.")
+            print(
+                "Error: GOOGLE_API_KEY not set. Set the environment variable or configure google_api_key in config.yaml."
+            )
             sys.exit(1)
         if config.model:
             return GeminiProvider(api_key=api_key, model=config.model)
@@ -52,14 +58,18 @@ def create_provider(config: Config):
     elif provider_name == "openrouter":
         api_key = config.get_api_key("openrouter")
         if not api_key:
-            print("Error: OPENROUTER_API_KEY not set. Set the environment variable or configure openrouter_api_key in config.yaml.")
+            print(
+                "Error: OPENROUTER_API_KEY not set. Set the environment variable or configure openrouter_api_key in config.yaml."
+            )
             sys.exit(1)
         if config.model:
             return OpenRouterProvider(api_key=api_key, model=config.model)
         return OpenRouterProvider(api_key=api_key)
 
     else:
-        print(f"Error: Unknown provider '{provider_name}'. Choose from: claude, openai, gemini, openrouter")
+        print(
+            f"Error: Unknown provider '{provider_name}'. Choose from: claude, openai, gemini, openrouter"
+        )
         sys.exit(1)
 
 
@@ -91,6 +101,48 @@ def parse_level(level_str: str) -> UserLevel:
         "advanced": UserLevel.ADVANCED,
     }
     return level_map.get(level_str.lower(), UserLevel.INTERMEDIATE)
+
+
+def lang_name_to_code(lang_name: str) -> str:
+    """Convert language name to ISO 639-1 language code.
+    
+    Args:
+        lang_name: Language name (e.g., "French", "English")
+        
+    Returns:
+        Language code (e.g., "fr", "en"), or "en" if not found.
+    """
+    lang_map = {
+        "english": "en",
+        "french": "fr",
+        "spanish": "es",
+        "german": "de",
+        "italian": "it",
+        "portuguese": "pt",
+        "chinese": "zh",
+        "japanese": "ja",
+        "korean": "ko",
+        "russian": "ru",
+        "arabic": "ar",
+        "hindi": "hi",
+        "dutch": "nl",
+        "polish": "pl",
+        "turkish": "tr",
+        "vietnamese": "vi",
+        "thai": "th",
+        "indonesian": "id",
+        "swedish": "sv",
+        "norwegian": "no",
+        "danish": "da",
+        "finnish": "fi",
+        "greek": "el",
+        "hebrew": "he",
+        "czech": "cs",
+        "hungarian": "hu",
+        "romanian": "ro",
+        "ukrainian": "uk",
+    }
+    return lang_map.get(lang_name.lower(), "en")
 
 
 # =============================================================================
@@ -155,11 +207,7 @@ def cmd_config_path(_args):
 
 
 def cmd_gen(args):
-    """Generate Anki cards from input file."""
-    # Require input file
-    if not args.input:
-        print("Error: --input is required")
-        sys.exit(1)
+    """Generate Anki cards from input file or a YouTube URL transcript."""
 
     # Load configuration
     config = load_config(getattr(args, "config", None))
@@ -180,16 +228,45 @@ def cmd_gen(args):
     if args.model:
         config.model = args.model
 
-    # Read input file
-    print(f"Reading input file: {args.input}")
-    reader = FileReader()
-    try:
-        text = reader.read(args.input)
-    except (FileNotFoundError, ValueError) as e:
-        print(f"Error: {e}")
+    # Validate inputs: either --input or --youtube
+    if not args.input and not args.youtube:
+        print("Error: either --input or --youtube is required")
+        sys.exit(1)
+    if args.input and args.youtube:
+        print("Error: --input and --youtube are mutually exclusive")
         sys.exit(1)
 
-    print(f"Read {len(text)} characters from input file")
+    # Read input source
+    if args.youtube:
+        langs = []
+        if args.yt_lang:
+            # comma-separated list (user override)
+            langs = [x.strip() for x in args.yt_lang.split(",") if x.strip()]
+        if not langs:
+            # Use target_lang from config as default
+            default_lang_code = lang_name_to_code(config.target_lang)
+            langs = [default_lang_code]
+
+        print(f"Fetching YouTube transcript: {args.youtube}")
+        try:
+            tr = fetch_youtube_transcript_precise(args.youtube, languages=langs)
+            text = tr.text
+            print(f"Fetched transcript for video_id={tr.video_id}, language={tr.language}")
+        except Exception as e:
+            print(f"Error fetching YouTube transcript: {e}")
+            sys.exit(1)
+
+        print(f"Transcript length: {len(text)} characters")
+    else:
+        print(f"Reading input file: {args.input}")
+        reader = FileReader()
+        try:
+            text = reader.read(args.input)
+        except (FileNotFoundError, ValueError) as e:
+            print(f"Error: {e}")
+            sys.exit(1)
+
+        print(f"Read {len(text)} characters from input file")
 
     # Create provider
     print(f"Using provider: {config.provider}")
@@ -259,7 +336,8 @@ def _add_config_parser(subparsers):
         description="Generate an example configuration YAML file.",
     )
     init_parser.add_argument(
-        "--output", "-o",
+        "--output",
+        "-o",
         help="Output path for config file (default: config.yaml in current dir)",
     )
     init_parser.set_defaults(func=cmd_config_init)
@@ -271,7 +349,8 @@ def _add_config_parser(subparsers):
         description="Display the currently loaded configuration values.",
     )
     show_parser.add_argument(
-        "--config", "-c",
+        "--config",
+        "-c",
         help="Path to configuration YAML file",
     )
     show_parser.set_defaults(func=cmd_config_show)
@@ -306,21 +385,33 @@ Environment Variables:
   OPENAI_API_KEY      - API key for ChatGPT
   GOOGLE_API_KEY      - API key for Gemini
   OPENROUTER_API_KEY  - API key for OpenRouter
-        """
+        """,
     )
 
     gen_parser.add_argument(
-        "--input", "-i",
-        required=True,
+        "--input",
+        "-i",
         help="Input file path (txt, srt, md, pdf)",
     )
+
     gen_parser.add_argument(
-        "--output", "-o",
+        "--youtube",
+        help="YouTube video URL (or 11-char video id). If provided, fetch transcript and generate cards from it.",
+    )
+
+    gen_parser.add_argument(
+        "--yt-lang",
+        help="Preferred transcript languages, comma-separated (default: target_lang from config). Example: --yt-lang en,en-US",
+    )
+    gen_parser.add_argument(
+        "--output",
+        "-o",
         default="cards.apkg",
         help="Output file path. Use .apkg for Anki package (recommended) or .csv for CSV (default: cards.apkg)",
     )
     gen_parser.add_argument(
-        "--provider", "-p",
+        "--provider",
+        "-p",
         choices=["claude", "openai", "gemini", "openrouter"],
         help="LLM provider to use (default: claude)",
     )
@@ -329,7 +420,8 @@ Environment Variables:
         help="LLM model to use (overrides provider default)",
     )
     gen_parser.add_argument(
-        "--level", "-l",
+        "--level",
+        "-l",
         choices=["beginner", "intermediate", "advanced"],
         help="User proficiency level (default: intermediate)",
     )
@@ -342,16 +434,19 @@ Environment Variables:
         help="Target language being learned (default: English)",
     )
     gen_parser.add_argument(
-        "--card-types", "-t",
+        "--card-types",
+        "-t",
         help="Card types to generate, comma-separated (default: vocabulary,cloze,sentence)",
     )
     gen_parser.add_argument(
-        "--max-cards", "-m",
+        "--max-cards",
+        "-m",
         type=int,
         help="Maximum cards per type (default: 20)",
     )
     gen_parser.add_argument(
-        "--config", "-c",
+        "--config",
+        "-c",
         help="Path to configuration YAML file",
     )
     gen_parser.add_argument(
@@ -394,7 +489,7 @@ Environment Variables:
   OPENAI_API_KEY      - API key for ChatGPT
   GOOGLE_API_KEY      - API key for Gemini
   OPENROUTER_API_KEY  - API key for OpenRouter
-        """
+        """,
     )
 
     subparsers = parser.add_subparsers(
