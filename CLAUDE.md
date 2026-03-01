@@ -4,7 +4,7 @@ Project context for AI assistants working on this codebase.
 
 ## Project Overview
 
-CLI tool that generates Anki flashcards from text using LLMs (Claude, OpenAI, Gemini).
+CLI tool that generates Anki flashcards from text using LLMs (Claude, OpenAI, Gemini, OpenRouter).
 
 ## Tech Stack
 
@@ -22,7 +22,8 @@ anki_enhance/
 │   ├── base.py          # Abstract LLMProvider interface
 │   ├── claude.py        # Anthropic Claude (claude-sonnet-4-20250514)
 │   ├── openai.py        # OpenAI ChatGPT (gpt-4o)
-│   └── gemini.py        # Google Gemini (gemini-2.0-flash)
+│   ├── gemini.py        # Google Gemini (gemini-2.0-flash)
+│   └── openrouter.py    # OpenRouter (LiteLLM-based)
 ├── generators/
 │   ├── prompts.py       # Prompt templates by card type/level
 │   └── card_generator.py # Core logic: provider + prompts → cards
@@ -32,7 +33,8 @@ anki_enhance/
 ├── models/
 │   └── card.py          # VocabularyCard, ClozeCard, SentenceCard
 └── utils/
-    └── file_reader.py   # Supports txt, srt, md, pdf
+    ├── file_reader.py   # Supports txt, srt, md, pdf
+    └── youtube_transcript.py  # YouTube URL parsing + transcript fetching
 ```
 
 ## Card Types
@@ -48,6 +50,7 @@ anki_enhance/
 - `ANTHROPIC_API_KEY` - Claude
 - `OPENAI_API_KEY` - ChatGPT
 - `GOOGLE_API_KEY` - Gemini
+- `OPENROUTER_API_KEY` - OpenRouter
 
 ## CLI Structure
 
@@ -79,6 +82,7 @@ uv run anki-enhance config init        # Generate example config
 uv run anki-enhance config show        # Display current config
 uv run anki-enhance config path        # Show config search paths
 uv run anki-enhance gen -i file.txt    # Generate cards
+uv run anki-enhance gen --youtube URL  # Generate cards from YouTube transcript
 ```
 
 ## Key Implementation Details
@@ -89,6 +93,10 @@ uv run anki-enhance gen -i file.txt    # Generate cards
 - CSV exporter separates card types into different files unless `--single-file`
 - APKG exporter uses `genanki` with custom note models and CSS styling
 - Google Gemini uses `google-genai` package with `genai.Client` API
+- YouTube transcript fetching uses `youtube-transcript-api` (`YouTubeTranscriptApi().list()` / `.fetch()`)
+- Default YouTube transcript language uses `target_lang` from config (mapped to language code); `--yt-lang` overrides
+- Transcript selection prefers manually created subtitles by default (falls back to generated)
+- YouTube transcripts are processed in-memory (not saved as a standalone transcript file)
 
 ## Lessons Learned
 
